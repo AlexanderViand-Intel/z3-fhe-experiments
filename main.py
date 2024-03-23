@@ -10,11 +10,15 @@ def matvecmul(M, v):
 def svecreduceadd(u, n, assumptions):
     ps = FreshConst(ArraySort(IntSort(), IntSort()), "partialsum")
     i = Int("i")
-    assumptions.append(ps[0] == u[0])
-    assumptions.append(
-        ForAll([i], Implies(And(i >= 1, i < n), ps[i] == ps[i - 1] + u[i]))
-    )
-    return ps[n - 1]
+    # Based on https://stackoverflow.com/q/66696664
+    symSum = RecFunction("symSum" + str(ps), IntSort(), IntSort())
+    RecAddDefinition(symSum, [i], If(i < 0, 0, u[i] + symSum(i - 1)))
+    return symSum(n - 1)
+    # assumptions.append(ps[0] == u[0])
+    # assumptions.append(
+    #     ForAll([i], Implies(And(i >= 1, i < n), ps[i] == ps[i - 1] + u[i]))
+    # )
+    # return ps[n - 1]
 
 
 def smatvecmul(M, v, n, assumptions):
@@ -86,7 +90,7 @@ def sveceq(u, v, n):
 
 
 def symbolic():
-    n = 2**14
+    n = 10
     input = FreshConst(ArraySort(IntSort(), IntSort()), "in1")
     input2 = FreshConst(ArraySort(IntSort(), IntSort()), "in2")
     r = Int("r")
@@ -103,7 +107,7 @@ def symbolic():
     s = Solver()
     s.add(Not(to_prove))
     print(s.to_smt2())
-    # prove(to_prove)
+    prove(to_prove)
 
 
 def concrete():
