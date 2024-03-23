@@ -15,7 +15,7 @@ def vecmul(u, v):
     return [a * b for a, b in zip(u, v)]
 
 
-def vecrot(u, k):
+def svecrot(u, k):
     return [u[(i + k) % len(u)] for i in range(len(u))]
 
 
@@ -24,10 +24,10 @@ def to_diag(M):
 
 
 def diagimpl(M, v):
-    return reduce(vecadd, (vecmul(d, vecrot(v, i)) for i, d in enumerate(to_diag(M))))
+    return reduce(vecadd, (vecmul(d, svecrot(v, i)) for i, d in enumerate(to_diag(M))))
 
 
-def vecrot(u, r, n, assumptions):
+def svecrot(u, r, n, assumptions):
     out = FreshConst(ArraySort(IntSort(), IntSort()), "rot")
     i = Int("i")
     assumptions.append(
@@ -35,20 +35,33 @@ def vecrot(u, r, n, assumptions):
     )
     return out
 
+def svecmap2(f, fname, u, v, r, n, assumptions):
+    out = FreshConst(ArraySort(IntSort(), IntSort()), fname)
+    i = Int("i")
+    assumptions.append(
+        ForAll([i], Implies(And(i >= 0, i < n), out[i] == f(u[i], v[i])))
+    )
+    return out
 
-def veceq(u, v, n):
+def svecadd(u, v, n, assumptions):
+    return svecmap2(lambda a, b: a + b, "add", u, v, n, assumptions)
+
+def svecmul(u, v, n, assumptions):
+    return svecmap2(lambda a, b: a * b, "mul", u, v, n, assumptions)
+
+def sveceq(u, v, n):
     i = Int("i")
     return ForAll([i], Implies(And(i >= 0, i < n), u[i] == v[i]))
 
 
 def symbolic():
-    n = 2**14
+    n = Int("n")
     input = FreshConst(ArraySort(IntSort(), IntSort()), "in")
-    r = 5
-    assumptions = []
-    rot = vecrot(input, r, n, assumptions)
-    rot2 = vecrot(rot, -r, n, assumptions)
-    correctness = veceq(input, rot2, n)
+    r = Int("r")
+    assumptions = [r < n, r >= 0, n > 0]
+    rot = svecrot(input, r, n, assumptions)
+    rot2 = svecrot(rot, -r, n, assumptions)
+    correctness = sveceq(input, rot2, n)
     prove(Implies(And(*assumptions), correctness))
 
 
