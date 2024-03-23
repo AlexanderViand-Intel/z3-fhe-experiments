@@ -27,8 +27,34 @@ def diagimpl(M, v):
     return reduce(vecadd, (vecmul(d, vecrot(v, i)) for i, d in enumerate(to_diag(M))))
 
 
-def main():
+def vecrot(u, r, n, assumptions):
+    out = FreshConst(ArraySort(IntSort(), IntSort()), "rot")
+    i = Int("i")
+    assumptions.append(
+        ForAll([i], Implies(And(i >= 0, i < n), out[i] == u[(i + r) % n]))
+    )
+    return out
+
+
+def veceq(u, v, n):
+    i = Int("i")
+    return ForAll([i], Implies(And(i >= 0, i < n), u[i] == v[i]))
+
+
+def symbolic():
+    n = 2**14
+    input = FreshConst(ArraySort(IntSort(), IntSort()), "in")
+    r = 5
+    assumptions = []
+    rot = vecrot(input, r, n, assumptions)
+    rot2 = vecrot(rot, -r, n, assumptions)
+    correctness = veceq(input, rot2, n)
+    prove(Implies(And(*assumptions), correctness))
+
+
+def concrete():
     a, b = Ints("a b")
+    assumptions = []
     in_size = 2**14
     v = [Int("v_%s" % i) for i in range(in_size)]
     out_size = 2**14
@@ -40,4 +66,4 @@ def main():
     prove(And(*[a == b for a, b in zip(matvecmul(M, v), diagimpl(M, v))]))
 
 
-main()
+symbolic()
