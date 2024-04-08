@@ -90,11 +90,11 @@ def sveceq(u, v, n):
 
 
 def symbolic():
-    n = 10
+    n = Int("n")
     input = FreshConst(ArraySort(IntSort(), IntSort()), "in1")
     input2 = FreshConst(ArraySort(IntSort(), IntSort()), "in2")
     r = Int("r")
-    assumptions = [r < n, r >= 0, n > 0]
+    assumptions = [r < n, r >= 0, n > 0, n <= 10]
     rot = svecrot(input, r, n, assumptions)
     # rot2 = svecrot(rot, -r, n, assumptions)
     # ab = svecmul(input, input2, n, assumptions)
@@ -106,7 +106,8 @@ def symbolic():
     to_prove = Implies(And(*assumptions), correctness)
     s = Solver()
     s.add(Not(to_prove))
-    print(s.to_smt2())
+    print(s.sexpr())
+    print("(check-sat)")
     prove(to_prove)
 
 
